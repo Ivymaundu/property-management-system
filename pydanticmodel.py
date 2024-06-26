@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from dbservice import PaymentStatus
 
 class UserCreate(BaseModel):
     username : str
@@ -53,7 +54,7 @@ class TenantHouseBillCreate(BaseModel):
     tenant_house_id : int
     billing_date : str
     due_date : str
-    payment_status : str
+    payment_status : PaymentStatus
     amount:float
 
 class TenantHouseBillResponse(TenantHouseBillCreate):

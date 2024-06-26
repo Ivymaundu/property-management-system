@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from sqlalchemy import func
 from dbservice import *
 from pydanticmodel import *
 from fastapi.middleware.cors import CORSMiddleware
@@ -200,8 +201,51 @@ def get_payments():
     
     return payments_made
 
+@app.get('/house/status/{house_id}')
+def check_house_status(house_id : int, tenant_id : int):
+
+    current_date = datetime.utcnow()
+
+    house = db.query(House).filter(House.id == house_id).first()
+
+    if house is None:
+        raise HTTPException(status_code=404, detail="House not found")
+    
+    tenant_house = db.query(TenantHouse).filter(TenantHouse.house_id == house_id , TenantHouse.tenant_id == tenant_id , TenantHouse.end_date <= current_date).first()
+
+    if tenant_house :
+        
+        house.status = HouseStatus.OCCUPIED
+
+    else:
+        house.status = HouseStatus.VACANT
+
+    db.commit()
+    db.refresh(house)
+
+    return {"house_id" :house.id , "status" : house.status.value}
+        
+
+@app.get('/payment/status/{tenant_house_bill_id}')
+def check_payment_status(tenant_house_bill_id : int):
+    tenant_house_bill = db.query(Tenanthousebill).filter(Tenanthousebill.id == tenant_house_bill_id).first()
+
+    if not tenant_house_bill:
+         raise HTTPException(status_code=404, detail="tenant_house_bill not found")
+        
+    total_paid = db.query(func.sum(Payment.amount_paid)).filter(Payment.tenant_house_bill_id == tenant_house_bill_id).scalar() or 0
+
+    if total_paid >= tenant_house_bill.amount:
+        tenant_house_bill.payment_status = PaymentStatus.PAID
+    
+    else:
+        tenant_house_bill.payment_status = PaymentStatus.PENDING
 
 
+    db.commit()
+    db.refresh(tenant_house_bill)
+
+    return {'tenant_house_bill_id' : tenant_house_bill.id , "payment_status" : tenant_house_bill.payment_status.value}
 
 if __name__ == "__main__":
     config = uvicorn.Config("main:app", port=8000, log_level="info")

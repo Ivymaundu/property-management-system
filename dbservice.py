@@ -39,7 +39,7 @@ class House(Base):
     house_number = Column(String , nullable = False)
     no_of_rooms = Column(Integer , nullable = False)
     rent = Column(String)
-    status = Column(Enum(HouseStatus), nullable=False)
+    status = Column(Enum(HouseStatus), nullable=False, default=HouseStatus.VACANT)
     # relationship
     tenanthouse= relationship("TenantHouse" , back_populates = "house") 
 
@@ -59,7 +59,7 @@ class TenantHouse( Base ):
     tenant_id = Column( Integer , ForeignKey('tenants.id'))
     house_id = Column(Integer , ForeignKey('houses.id'))
     start_date = Column( DateTime, default=datetime.utcnow, nullable=False )
-    end_date = Column(String)
+    end_date = Column(DateTime)
     tenant = relationship("Tenant" , back_populates = "tenanthouses")
     house= relationship("House" , back_populates ="tenanthouse")
     tenant_house= relationship("Tenanthousebill" , back_populates="tenant_houses")
@@ -72,7 +72,7 @@ class Tenanthousebill( Base ):
     billing_date = Column(String)
     due_date= Column( String)
     amount= Column( Numeric)
-    payment_status = Column(Enum(PaymentStatus),nullable=False)
+    payment_status = Column(Enum(PaymentStatus),nullable=False ,default=PaymentStatus.PENDING)
     tenant_houses = relationship("TenantHouse" , back_populates = "tenant_house")
     payment_date= Column(DateTime, default=datetime.utcnow, nullable=False )
     payments = relationship("Payment" , back_populates = "tenantbill")
