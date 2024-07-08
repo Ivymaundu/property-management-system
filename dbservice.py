@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import DateTime, Enum,  Numeric, create_engine,Column,Integer,String,ForeignKey,Float
+from sqlalchemy import Date, DateTime, Enum,  Numeric, create_engine,Column,Integer,String,ForeignKey,Float
 from sqlalchemy.orm import sessionmaker,relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime 
@@ -22,6 +22,11 @@ class HouseStatus(enum.Enum):
 class PaymentStatus(enum.Enum):
     PAID = 'paid'
     PENDING = 'pending'
+
+class ApartmentBillStatus(enum.Enum):
+    PAID = 'paid'
+    PENDING = 'pending'
+
 
 class User( Base ):
     __tablename__ = 'users'
@@ -85,6 +90,35 @@ class Payment(Base):
     payment_method= Column( String(255))
     amount_paid = Column(Numeric)
     tenantbill= relationship("Tenanthousebill",back_populates= "payments")
+
+class Apartmentbill(Base):
+    __tablename__ ='apartmentbills'
+    id = Column( Integer ,primary_key = True)
+    bill_type = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    amountpaid = Column(Float, nullable=False)
+    balance = Column(Float) 
+    due_date = Column(Date, nullable=False)  
+    status = Column(Enum(ApartmentBillStatus,native_enum=False), default=False)  
+    bill_date = Column(Date, nullable=False)
+
+    def __init__(self, amount, amountpaid, bill_type, due_date, bill_date):
+        self.bill_type = bill_type
+        self.amount = amount
+        self.amountpaid = amountpaid
+        self.due_date = due_date
+        self.bill_date = bill_date
+        self.status = None
+        self.balance = None
+        self.update_status()
+
+    def update_status(self):
+        if self.amount == self.amountpaid:
+            self.status = ApartmentBillStatus.PAID
+            self.balance = 0
+        else:
+            self.status = ApartmentBillStatus.PENDING
+            self.balance = self.amount - self.amountpaid  
 
 
 Base.metadata.create_all(bind=engine)    

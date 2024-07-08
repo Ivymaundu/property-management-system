@@ -247,6 +247,25 @@ def check_payment_status(tenant_house_bill_id : int):
 
     return {'tenant_house_bill_id' : tenant_house_bill.id , "payment_status" : tenant_house_bill.payment_status.value}
 
+@app.post("/apartmentbills/")
+def create_apartment_bill(bill: ApartmentBillCreate):
+    db_bill = Apartmentbill(**bill.dict())
+    db.add(db_bill)
+    db.commit()
+    db.refresh(db_bill)
+    return db_bill
+
+@app.get("/apartmentbills/{bill_id}")
+def read_apartment_bill(bill_id: int):
+    db_bill = db.query(Apartmentbill).filter(Apartmentbill.id == bill_id).first()
+    if db_bill is None:
+        raise HTTPException(status_code=404, detail="ApartmentBill not found")
+    db_bill.update_status()
+    db.commit()
+    db.refresh(db_bill)
+    return db_bill
+
+
 if __name__ == "__main__":
     config = uvicorn.Config("main:app", port=8000, log_level="info")
     server = uvicorn.Server(config)
